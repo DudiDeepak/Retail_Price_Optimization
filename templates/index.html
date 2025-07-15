@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Optimization Predictor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            box-sizing: border-box; /* Ensure padding doesn't increase width */
+        }
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo 500 */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #6366f1; /* Indigo 500 */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #4f46e5; /* Indigo 600 */
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #result {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #e0f2fe; /* Light blue */
+            border: 1px solid #90cdf4; /* Blue border */
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c5282; /* Dark blue */
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+        #loading {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 16px;
+            color: #6b7280;
+            display: none; /* Hidden by default */
+        }
+        .grid-cols-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        @media (max-width: 640px) {
+            .grid-cols-2 {
+                grid-template-columns: 1fr; /* Stack columns on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Price Optimization Predictor</h1>
+
+        <form id="predictionForm">
+            <div class="grid-cols-2">
+                <div class="form-group">
+                    <label for="product_category_name">Product Category:</label>
+                    <select id="product_category_name" name="product_category_name" required>
+                        <option value="">Select a category</option>
+                        <!-- Categories will be dynamically loaded here by Flask -->
+                        {% for category in product_categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="qty">Quantity (qty):</label>
+                    <input type="number" id="qty" name="qty" required min="1" value="10">
+                </div>
+
+                <div class="form-group">
+                    <label for="freight_price">Freight Price:</label>
+                    <input type="number" id="freight_price" name="freight_price" step="0.01" required value="15.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="product_name_lenght">Product Name Length:</label>
+                    <input type="number" id="product_name_lenght" name="product_name_lenght" required min="1" value="50">
+                </div>
+
+                <div class="form-group">
+                    <label for="product_description_lenght">Product Description Length:</label>
+                    <input type="number" id="product_description_lenght" name="product_description_lenght" required min="1" value="500">
+                </div>
+
+                <div class="form-group">
+                    <label for="product_photos_qty">Product Photos Quantity:</label>
+                    <input type="number" id="product_photos_qty" name="product_photos_qty" required min="0" value="2">
+                </div>
+
+                <div class="form-group">
+                    <label for="product_weight_g">Product Weight (g):</label>
+                    <input type="number" id="product_weight_g" name="product_weight_g" required min="1" value="1000">
+                </div>
+
+                <div class="form-group">
+                    <label for="product_score">Product Score:</label>
+                    <input type="number" id="product_score" name="product_score" step="0.1" required min="1" max="5" value="4.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="customers">Customers:</label>
+                    <input type="number" id="customers" name="customers" required min="0" value="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="weekday">Weekday (1-23):</label>
+                    <input type="number" id="weekday" name="weekday" required min="1" max="23" value="22">
+                </div>
+
+                <div class="form-group">
+                    <label for="weekend">Weekend (0 or 1):</label>
+                    <input type="number" id="weekend" name="weekend" required min="0" max="1" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="holiday">Holiday (0 or 1):</label>
+                    <input type="number" id="holiday" name="holiday" required min="0" max="1" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="month">Month (1-12):</label>
+                    <input type="number" id="month" name="month" required min="1" max="12" value="7">
+                </div>
+
+                <div class="form-group">
+                    <label for="year">Year:</label>
+                    <input type="number" id="year" name="year" required min="2017" max="2025" value="2018">
+                </div>
+
+                <div class="form-group">
+                    <label for="s">Seasonality Factor (s):</label>
+                    <input type="number" id="s" name="s" step="0.01" required value="15.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="volume">Volume:</label>
+                    <input type="number" id="volume" name="volume" required min="0" value="5000">
+                </div>
+
+                <div class="form-group">
+                    <label for="comp_1">Competitor 1 Price:</label>
+                    <input type="number" id="comp_1" name="comp_1" step="0.01" required value="90.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="ps1">Competitor 1 Score (ps1):</label>
+                    <input type="number" id="ps1" name="ps1" step="0.1" required min="1" max="5" value="4.1">
+                </div>
+
+                <div class="form-group">
+                    <label for="fp1">Competitor 1 Freight Price (fp1):</label>
+                    <input type="number" id="fp1" name="fp1" step="0.01" required value="10.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="comp_2">Competitor 2 Price:</label>
+                    <input type="number" id="comp_2" name="comp_2" step="0.01" required value="110.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="ps2">Competitor 2 Score (ps2):</label>
+                    <input type="number" id="ps2" name="ps2" step="0.1" required min="1" max="5" value="4.2">
+                </div>
+
+                <div class="form-group">
+                    <label for="fp2">Competitor 2 Freight Price (fp2):</label>
+                    <input type="number" id="fp2" name="fp2" step="0.01" required value="12.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="comp_3">Competitor 3 Price:</label>
+                    <input type="number" id="comp_3" name="comp_3" step="0.01" required value="80.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="ps3">Competitor 3 Score (ps3):</label>
+                    <input type="number" id="ps3" name="ps3" step="0.1" required min="1" max="5" value="3.9">
+                </div>
+
+                <div class="form-group">
+                    <label for="fp3">Competitor 3 Freight Price (fp3):</label>
+                    <input type="number" id="fp3" name="fp3" step="0.01" required value="11.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="lag_price">Lag Price (Previous Unit Price):</label>
+                    <input type="number" id="lag_price" name="lag_price" step="0.01" required value="105.0">
+                </div>
+            </div>
+
+            <button type="submit">Predict Unit Price</button>
+        </form>
+
+        <div id="loading" class="hidden">
+            Predicting...
+        </div>
+
+        <div id="result" class="hidden">
+            <!-- Prediction result will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                // Convert numeric inputs to numbers, others to string
+                if (form.elements[key].type === 'number') {
+                    data[key] = parseFloat(value);
+                } else {
+                    data[key] = value;
+                }
+            });
+
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+
+            resultDiv.style.display = 'none'; // Hide previous result
+            loadingDiv.style.display = 'block'; // Show loading indicator
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                loadingDiv.style.display = 'none'; // Hide loading indicator
+
+                if (response.ok) {
+                    resultDiv.textContent = `Predicted Unit Price: $${result.predicted_unit_price.toFixed(2)}`;
+                    resultDiv.style.display = 'block';
+                    resultDiv.classList.remove('bg-red-100', 'border-red-400', 'text-red-700');
+                    resultDiv.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
+                } else {
+                    resultDiv.textContent = `Error: ${result.error || 'Something went wrong'}`;
+                    resultDiv.style.display = 'block';
+                    resultDiv.classList.remove('bg-blue-100', 'border-blue-400', 'text-blue-700');
+                    resultDiv.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none'; // Hide loading indicator
+                resultDiv.textContent = `Network Error: ${error.message}`;
+                resultDiv.style.display = 'block';
+                resultDiv.classList.remove('bg-blue-100', 'border-blue-400', 'text-blue-700');
+                resultDiv.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
+            }
+        });
+    </script>
+</body>
+</html>
